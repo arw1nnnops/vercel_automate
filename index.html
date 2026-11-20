@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Surat NSD dari memo masuk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@600;700&family=Tinos:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    :root {
+      --bg-canvas: #edf2f4;
+      --ink-dark: #0e252c;
+      --ink-muted: #526872;
+      --bni-teal: #105565;
+      --bni-teal-hover: #0b414e;
+      --bni-orange: #e8681f;
+      --border-soft: #d6e0e5;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-canvas);
+      color: var(--ink-dark);
+    }
+
+    .font-serif-display {
+      font-family: 'Lora', Georgia, 'Times New Roman', serif;
+    }
+
+    .letter-doc {
+      font-family: Arial, Helvetica, sans-serif;
+      color: #111827;
+      line-height: 1.45;
+      font-size: 10pt;
+    }
+
+    .letter-doc p,
+    .letter-doc .point-item,
+    .letter-doc .sub-item {
+      margin: 0 0 8px;
+      text-align: justify;
+    }
+
+    .letter-doc p:last-child {
+      margin-bottom: 0;
+    }
+
+    .letter-doc:focus {
+      outline: 2px solid #cbd5e1;
+      outline-offset: 8px;
+      border-radius: 4px;
+    }
+
+    .doc-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 14px;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10pt;
+    }
+
+    .doc-table th,
+    .doc-table td {
+      border: 1px solid #111827;
+      padding: 6px 8px;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    .doc-table th {
+      background-color: #f3f6f7;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    /* Stacked paper edge matching the reference card */
+    .paper-stack {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid var(--border-soft);
+      border-top: 3px solid var(--bni-teal);
+      border-radius: 4px 4px 8px 8px;
+      box-shadow: 4px 5px 0 -1px #ffffff, 4px 5px 0 0 var(--border-soft);
+    }
+
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #letter-content,
+      #letter-content * {
+        visibility: visible;
+      }
+      #letter-content {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        padding: 16mm 20mm !important;
+        background: #ffffff !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen py-8 sm:py-12 px-4 sm:px-8">
+
+  <!-- LOGIN SCREEN -->
+  <div id="login-screen" class="max-w-md mx-auto mt-10 sm:mt-16">
+    <div class="paper-stack p-7 sm:p-8 space-y-6">
+      <div class="flex items-center justify-between gap-3 pb-4 border-b border-[#e2e8ec]">
+        <div>
+          <h1 class="font-serif-display text-2xl font-bold text-[#0e252c]">Masuk ke Surat NSD</h1>
+          <p class="text-xs text-[#526872] mt-1">Akses terbatas untuk tim Divisi NSD</p>
+        </div>
+        <div class="flex items-center gap-1.5 select-none shrink-0" aria-label="BNI">
+          <svg width="24" height="24" viewBox="0 0 32 32" aria-hidden="true">
+            <rect width="32" height="32" rx="3" fill="#e8681f" />
+            <path d="M5 24 L16 8 L27 24" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M9 14 C13 18, 19 18, 23 14" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" />
+            <circle cx="16" cy="21" r="2.2" fill="#ffffff" />
+          </svg>
+          <span class="font-serif-display text-2xl font-bold tracking-tight text-[#105565] leading-none">BNI</span>
+        </div>
+      </div>
+
+      <!-- Auth Mode Switcher -->
+      <div class="grid grid-cols-2 gap-1 bg-[#edf2f4] p-1 rounded-lg">
+        <button id="tab-auth-login" type="button" class="py-1.5 rounded-md text-xs font-semibold bg-white text-[#0e252c] shadow-sm transition-colors">
+          Masuk
+        </button>
+        <button id="tab-auth-register" type="button" class="py-1.5 rounded-md text-xs font-medium text-[#526872] hover:text-[#0e252c] transition-colors">
+          Daftar Akun
+        </button>
+      </div>
+
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label for="login-user" class="block text-xs font-semibold text-[#0e252c] mb-1">Email / Username</label>
+          <input id="login-user" type="text" required autocomplete="username" placeholder="admin@nsd.bni.co.id" class="w-full rounded-md border border-[#cbd5dc] px-3 py-2 text-sm text-[#0e252c] focus:outline-none focus:ring-2 focus:ring-[#105565]" />
+        </div>
+        <div>
+          <label for="login-pass" class="block text-xs font-semibold text-[#0e252c] mb-1">Kata Sandi</label>
+          <input id="login-pass" type="password" required autocomplete="current-password" placeholder="Masukkan kata sandi" class="w-full rounded-md border border-[#cbd5dc] px-3 py-2 text-sm text-[#0e252c] focus:outline-none focus:ring-2 focus:ring-[#105565]" />
+        </div>
+        <p id="login-error" class="hidden text-xs font-medium text-red-600"></p>
+        <button id="btn-login-submit" type="submit" class="w-full py-2.5 px-4 rounded-md bg-[#105565] hover:bg-[#0b414e] text-white text-sm font-semibold transition-colors shadow-sm">
+          Masuk
+        </button>
+      </form>
+
+      <form id="register-form" class="space-y-3.5 hidden">
+        <div>
+          <label for="reg-name" class="block text-xs font-semibold text-[#0e252c] mb-1">Nama Lengkap</label>
+          <input id="reg-name" type="text" required placeholder="Contoh: Raka Pratama" class="w-full rounded-md border border-[#cbd5dc] px-3 py-2 text-sm text-[#0e252c] focus:outline-none focus:ring-2 focus:ring-[#105565]" />
+        </div>
+        <div>
+          <label for="reg-email" class="block text-xs font-semibold text-[#0e252c] mb-1">Email Kantor</label>
+          <input id="reg-email" type="email" required placeholder="nama@bni.co.id" class="w-full rounded-md border border-[#cbd5dc] px-3 py-2 text-sm text-[#0e252c] focus:outline-none focus:ring-2 focus:ring-[#105565]" />
+        </div>
+        <div>
+          <label for="reg-pass" class="block text-xs font-semibold text-[#0e252c] mb-1">Kata Sandi (min. 6 karakter)</label>
+          <input id="reg-pass" type="password" required minlength="6" placeholder="Buat kata sandi" class="w-full rounded-md border border-[#cbd5dc] px-3 py-2 text-sm text-[#0e252c] focus:outline-none focus:ring-2 focus:ring-[#105565]" />
+        </div>
+        <div>
+          <label for="reg-pass2" class="block text-xs font-semibold text-[#0e252c] mb-1">Konfirmasi Kata Sandi</label>
+          <input id="reg-pass2" type="password" required minlength="6" placeholder="Ulangi kata sandi" class="w-full rounded-md border border-[#cbd5dc] px-3 py-2 text-sm text-[#0e252c] focus:outline-none focus:ring-2 focus:ring-[#105565]" />
+        </div>
+        <p id="register-error" class="hidden text-xs font-medium text-red-600"></p>
+        <button id="btn-register-submit" type="submit" class="w-full py-2.5 px-4 rounded-md bg-[#105565] hover:bg-[#0b414e] text-white text-sm font-semibold transition-colors shadow-sm">
+          Daftar &amp; Masuk
+        </button>
+      </form>
+
+
+    </div>
+  </div>
+
+  <!-- MAIN APP SHELL (Shown after login) -->
+  <div id="app-shell" class="max-w-5xl mx-auto hidden">
+
+    <!-- Page Title & Subtitle -->
+    <header class="mb-7 flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <h1 class="font-serif-display text-3xl sm:text-[42px] font-bold tracking-tight text-[#0e252c] leading-tight">
+          Surat NSD dari memo masuk
+        </h1>
+        <p class="mt-2.5 text-[15px] sm:text-base text-[#526872]">
+          Unggah memo, periksa isinya, lalu unduh surat dalam format Word.
+        </p>
+      </div>
+      <div class="flex items-center gap-3 pt-1">
+        <span id="session-user-label" class="text-xs font-medium text-[#526872]"></span>
+        <button id="btn-logout" type="button" class="px-3 py-1.5 rounded-md border border-[#cbd5dc] bg-white hover:bg-slate-50 text-xs font-semibold text-[#0e252c] transition-colors">
+          Keluar
+        </button>
+      </div>
+    </header>
+
+    <!-- 3-Step Minimalist Progress Bar -->
+    <nav class="grid grid-cols-3 gap-4 sm:gap-5 mb-8" aria-label="Tahapan pembuatan surat">
+      <div id="step-1" class="step-item">
+        <div id="step-bar-1" class="h-[2.5px] bg-[#e8681f] mb-2.5 transition-colors"></div>
+        <span id="step-label-1" class="text-xs sm:text-sm font-semibold text-[#0e252c] transition-colors">1. Unggah memo</span>
+      </div>
+      <div id="step-2" class="step-item">
+        <div id="step-bar-2" class="h-[2.5px] bg-[#cbd5dc] mb-2.5 transition-colors"></div>
+        <span id="step-label-2" class="text-xs sm:text-sm font-medium text-[#526872] transition-colors">2. Periksa isi</span>
+      </div>
+      <div id="step-3" class="step-item">
+        <div id="step-bar-3" class="h-[2.5px] bg-[#cbd5dc] mb-2.5 transition-colors"></div>
+        <span id="step-label-3" class="text-xs sm:text-sm font-medium text-[#526872] transition-colors">3. Unduh Word</span>
+      </div>
+    </nav>
+
+    <!-- Main 2-Column Workspace -->
+    <main class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+      <!-- Left Card: Memo masuk -->
+      <section class="lg:col-span-5 bg-white border border-[#d6e0e5] rounded-xl p-6 space-y-5">
+        <div class="flex items-center justify-between gap-2">
+          <h2 class="font-serif-display text-xl font-bold text-[#0e252c]">Memo masuk</h2>
+          <button id="btn-reset" type="button" class="text-xs font-medium text-[#526872] hover:text-red-600 transition-colors hidden">
+            Reset
+          </button>
+        </div>
+
+        <!-- Surat Sumber (Memo Masuk) -->
+        <div class="space-y-1.5">
+          <span class="hidden text-xs font-semibold text-[#0e252c]">2. Surat sumber (memo masuk)</span>
+          <label for="memo-file-input" id="dropzone" class="block border-[1.5px] border-dashed border-[#c2cfd6] hover:border-[#105565] hover:bg-[#f6fafb] rounded-lg px-4 py-8 text-center cursor-pointer transition-colors">
+            <input id="memo-file-input" type="file" accept=".doc,.docx,.pdf,.txt,.png,.jpg,.jpeg" class="hidden" />
+            <div id="dropzone-title" class="text-sm font-semibold text-[#0e252c]">
+              Pilih atau seret file memo
+            </div>
+            <div id="dropzone-sub" class="text-xs text-[#526872] mt-1.5">
+              Word, PDF, gambar, atau teks
+            </div>
+          </label>
+        </div>
+
+        <!-- Toggle Paste Text / Sample / AI Settings -->
+        <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div class="flex items-center gap-3">
+            <button id="btn-toggle-paste" type="button" class="text-[#105565] hover:underline font-medium">
+              Atau tempel teks memo
+            </button>
+            <button id="btn-load-sample" type="button" class="text-[#526872] hover:text-[#0e252c] hover:underline">
+              Pakai contoh Memo BNI
+            </button>
+          </div>
+          
+        </div>
+
+        <!-- Collapsible Paste Textarea -->
+        <div id="paste-wrap" class="hidden space-y-2">
+          <label for="raw-memo-text" class="block text-xs font-medium text-[#526872]">Teks memo masuk</label>
+          <textarea id="raw-memo-text" rows="6" placeholder="Tempel isi memo di sini..." class="w-full rounded-lg border border-[#cbd5dc] px-3 py-2 text-xs text-[#0e252c] focus:outline-none focus:ring-2 focus:ring-[#105565]"></textarea>
+        </div>
+
+        <!-- Primary Action Button -->
+        <div class="pt-1 flex items-center gap-3">
+          <button id="btn-compose" type="button" class="px-5 py-2.5 rounded-md bg-[#105565] hover:bg-[#0b414e] text-white text-sm font-semibold transition-colors shadow-sm">
+            Susun surat
+          </button>
+          <span id="kbbi-badge" class="hidden text-[11px] font-medium px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200"></span>
+        </div>
+
+        <!-- Subtle helper note for .doc / image -->
+        <p id="file-helper-note" class="hidden text-xs text-[#526872] bg-[#f6fafb] border border-[#dce4e8] rounded-lg px-3 py-2"></p>
+      </section>
+
+      <!-- Right Card: Surat Preview & Inline Editor -->
+      <section class="lg:col-span-7 paper-stack p-6 sm:p-8 min-h-[400px] flex flex-col">
+
+        <!-- Card Header: "Surat" + BNI Mark -->
+        <div class="flex items-center justify-between gap-4 pb-4 border-b border-[#e2e8ec]">
+          <h2 class="font-serif-display text-lg font-bold text-[#0e252c]">Surat</h2>
+
+          <!-- Clean BNI Brand Mark (SVG) -->
+          <div class="flex items-center gap-2 select-none" aria-label="BNI">
+            <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true">
+              <rect width="32" height="32" rx="3" fill="#e8681f" />
+              <path d="M5 24 L16 8 L27 24" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M9 14 C13 18, 19 18, 23 14" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" />
+              <circle cx="16" cy="21" r="2.2" fill="#ffffff" />
+            </svg>
+            <span class="font-serif-display text-[26px] font-bold tracking-tight text-[#105565] leading-none">BNI</span>
+          </div>
+        </div>
+
+        <!-- Empty Placeholder State (Matches Screenshot Exactly) -->
+        <div id="empty-preview-state" class="py-8 text-[15px] text-[#526872] leading-relaxed max-w-md">
+          Surat yang sudah disusun muncul di sini. Kamu bisa mengedit isinya sebelum mengunduh.
+        </div>
+
+        <!-- Generated & Editable Letter Container -->
+        <div id="generated-letter-wrap" class="hidden flex-1 flex flex-col">
+          <div class="flex flex-wrap items-center justify-between gap-2 py-3 mb-3 border-b border-dashed border-[#e2e8ec]">
+            <span class="text-xs text-[#526872]">Klik langsung teks di bawah jika ingin mengedit sebelum diunduh.</span>
+            <div class="flex flex-wrap items-center gap-2">
+              <button id="btn-download-word" type="button" class="px-3.5 py-1.5 rounded-md bg-[#105565] hover:bg-[#0b414e] text-white text-xs font-semibold transition-colors">
+                Unduh Word (.doc)
+              </button>
+              <button id="btn-download-pdf" type="button" class="px-3 py-1.5 rounded-md border border-[#105565] text-[#105565] hover:bg-[#f0f7f8] text-xs font-semibold transition-colors">
+                Unduh PDF
+              </button>
+              <button id="btn-print" type="button" class="px-3 py-1.5 rounded-md border border-[#cbd5dc] text-[#526872] hover:bg-slate-50 text-xs font-medium transition-colors">
+                Cetak
+              </button>
+            </div>
+          </div>
+
+          <!-- Editable Official S-Seg Wil Letter -->
+          <article id="letter-content" contenteditable="true" spellcheck="false" class="letter-doc py-2 flex-1">
+            <!-- Populated dynamically -->
+          </article>
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+  <footer class="max-w-5xl mx-auto mt-10 text-center text-[11px] text-[#7b909a]">Surat NSD · v2.3 (Header & Footer Hal. 1)</footer>
+
+  <!-- Minimal Toast -->
+  <div id="toast" role="status" aria-live="polite" class="fixed bottom-5 right-5 z-50 hidden max-w-sm bg-[#0e252c] text-white text-xs sm:text-sm font-medium px-4 py-3 rounded-lg shadow-lg"></div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const BNI_LOGO_URI = "data:image/jpeg;base64,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oq0l74+xyHTJGclx3kXFrjvIvWzs7gUUVNHTBxeI8oBxFxN73O0DjXLZIvdptZHKhFPNLeERF4dBERABERABERABERABERABERABERABERABERABERABERABERABERABERABERABERABERABERABERABERABERABERABERABERABERABERABERABERAH/9k=";
+
+      if (window.pdfjsLib) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      }
+
+      // KBBI auto-normalization rules
+      const KBBI_RULES = [
+        [/\bmelakukan\s+monitoring\b/gi, 'memantau'],
+        [/\bmemonitoring\b/gi, 'memantau'],
+        [/\bmemonitor\b/gi, 'memantau'],
+        [/\bmonitoring\b/gi, 'pemantauan'],
+        [/\bkerjasama\b/gi, 'kerja sama'],
+        [/\bprogam\b/gi, 'program'],
+        [/\banalisa\b/gi, 'analisis'],
+        [/\bdiatas\b/gi, 'di atas'],
+        [/\bdibawah\b/gi, 'di bawah'],
+        [/\bsilahkan\b/gi, 'silakan'],
+        [/\bresiko\b/gi, 'risiko'],
+        [/\baktifitas\b/gi, 'aktivitas'],
+        [/\befektifitas\b/gi, 'efektivitas'],
+        [/\bkwalitas\b/gi, 'kualitas'],
+        [/\bstandard\b/gi, 'standar'],
+        [/\bmengkoordinasikan\b|\bmengkoordinir\b/gi, 'mengoordinasikan'],
+        [/\bmensosialisasikan\b/gi, 'menyosialisasikan'],
+        [/\bfollow[\s\-]+up\b/gi, 'tindak lanjut'],
+        [/\bupdate\b/gi, 'pembaruan']
+      ];
+
+      function normalizeKBBI(text) {
+        let result = String(text || '');
+        let count = 0;
+        for (const [pattern, replacement] of KBBI_RULES) {
+          result = result.replace(pattern, (match) => {
+            count += 1;
+            if (match[0] === match[0].toUpperCase() && match[0] !== match[0].toLowerCase()) {
+              return replacement.charAt(0).toUpperCase() + replacement.slice(1);
+            }
+            return replacement;
+          });
+        }
+        return { text: result, count };
+      }
+
+      // Auto-italic untuk istilah asing (bahasa Inggris / perbankan internasional) di luar tag HTML & email
+      const FOREIGN_TERMS = [
+        'risk based pricing', 'non-fixed income', 'non fixed income', 'fixed income',
+        'primary market', 'non primary', 'instant approval', 'selected partner',
+        'selected profesional', 'diamond clients', 'business banking', 'corrective action',
+        'sub branch office', 'branch office', 'credit operations retail', 'incentive fee',
+        'repayment capacity', 'ready stock', 'take over', 'top up', 'write-off',
+        'roll out', 'real-time', 'follow up', 'softcopy', 'hardcopy', 'tim leader',
+        'team leader', 'bancassurance', 'reviewable', 'appraisal', 'referral',
+        'booking', 'pricing', 'reward', 'payroll', 'online', 'offline', 'bankwide',
+        'tiering', 'outstanding', 'disbursement', 'approval', 'presenter', 'workflow',
+        'dashboard', 'feedback', 'deadline', 'mapping', 'draft', 'summary', 'report',
+        'portfolio', 'tier 1', 'tier 2', 'tier 3'
+      ];
+
+      function italicizeForeignTerms(safeHtml) {
+        // First convert explicit *italic* markdown from AI into <em>...</em>
+        let out = String(safeHtml || '').replace(/\*([^*\n<>]{2,60})\*/g, '<em>$1</em>');
+        // Split by HTML tags and email addresses so we never alter tags or emails
+        const tokens = out.split(/(<[^>]+>|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})/g);
+        const pattern = new RegExp('\\b(' + FOREIGN_TERMS.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\\b', 'gi');
+        let inEm = false;
+        return tokens
+          .map((tok) => {
+            if (!tok) return tok;
+            if (/^<em\b/i.test(tok)) { inEm = true; return tok; }
+            if (/^<\/em>/i.test(tok)) { inEm = false; return tok; }
+            if (tok.startsWith('<') || tok.includes('@') || inEm) return tok;
+            return tok.replace(pattern, '<em>$1</em>');
+          })
+          .join('');
+      }
+
+      // Format sub-poin (a., b., 1), 2), •, -) agar tetap tampil sebagai poin-poin rapi di surat
+      function formatStructuredPoint(numLabel, rawContent) {
+        const lines = String(rawContent || '').split('\n').map((l) => l.trim()).filter(Boolean);
+        if (lines.length <= 1) {
+          return `<div class="point-item" style="padding-left:20px;text-indent:-20px;text-align:justify;margin-bottom:7px;">${numLabel}. ${italicizeForeignTerms(escHtml(lines[0] || ''))}</div>`;
+        }
+        const firstLine = lines[0];
+        const rest = lines.slice(1);
+        const restHtml = rest
+          .map((line) => {
+            if (/^(?:[a-z]\.|\d+\)|[•\-\*])\s+/i.test(line)) {
+              const cleanBullet = line.replace(/^[•\*]\s+/, '- ');
+              return `<div class="sub-item" style="padding-left:38px;text-indent:-16px;margin-top:3px;margin-bottom:3px;text-align:justify;">${italicizeForeignTerms(escHtml(cleanBullet))}</div>`;
+            }
+            return `<div class="sub-item" style="padding-left:20px;margin-top:3px;margin-bottom:3px;text-align:justify;">${italicizeForeignTerms(escHtml(line))}</div>`;
+          })
+          .join('');
+        return `<div style="margin-bottom:8px;"><div class="point-item" style="padding-left:20px;text-indent:-20px;text-align:justify;margin-bottom:3px;">${numLabel}. ${italicizeForeignTerms(escHtml(firstLine))}</div>${restHtml}</div>`;
+      }
+
+      const SAMPLE_MEMO = {
+        fileName: 'Memo NSD SSE - Program BNI Griya Top Up 2026.docx',
+        tableRows: [
+          ['Usulan Divisi SSE', 'Tanggapan'],
+          [
+            'Pricing khusus berupa:\n• Suku bunga mengacu pada program Tier 1 yang saat ini berlaku.\n• Bebas biaya provisi dan administrasi\n• Bebas biaya appraisal (khusus plafon kredit s.d. Rp10M)\n• Bebas biaya PSJT\n• Diskon AJK\n• Pemberian incentive fee kepada Developer/Property Agent atas referral aplikasi sebesar 0,5% dari plafon kredit.',
+            'Setuju diberlakukan pricing khusus untuk Take Over dan Top Up berupa:\n1) Suku bunga Tier 1\n2) Bebas biaya provisi dan administrasi\n3) Biaya appraisal\nTerkait biaya PSJT, AJK, dan Incentive Fee dapat mengacu pada ketentuan BNI Griya yang berlaku.\nSyarat dan ketentuan terkait biaya-biaya dapat mengacu pada Lampiran A.'
+          ],
+          [
+            'Simplifikasi dokumen dan proses pengajuan Take Over dan Top Up',
+            'Setuju program simplifikasi proses khusus pengajuan BNI Griya Top Up dengan syarat dan ketentuan sesuai Lampiran B.'
+          ],
+          [
+            'Lain-lain:\n• Penilaian jaminan minimal sama dengan penilaian jaminan saat kredit berjalan\n• Diperbolehkan tidak ditutup AJK dengan mekanisme SKDR',
+            'Lain-lain mengacu pada ketentuan BNI Griya yang berlaku.'
+          ]
+        ],
+        text: `Memo
+Jakarta, 16 November 2026
+Nomor : CRP/1/8439
+RTC/1/2716
+Kepada : Divisi Network Strategy & Development (NSD)
+Divisi Sales Strategy & Execution (SSE)
+Dari : Divisi Consumer Product (CRP)
+Divisi Retail Credit Risk (RTC)
+Perihal : Penyampaian Tanggapan atas Usulan Progam Khusus BNI Griya Take Over dan Top Up
+Lampiran : 2 (Dua) Set
+
+Memo Divisi CRP No. CRP/3.1/3612 Tanggal 12 Juni 2026
+Memo Divisi SSE No. SSE/6/6092 Tanggal 14 Oktober 2026
+
+Menunjuk pokok memo tersebut di atas, bersama ini kami sampaikan hal-hal sebagai berikut:
+1. Dalam rangka mencapai target portofolio BNI Griya tahun 2026 menjadi Rp81,8 Triliun dibutuhkan angka realisasi booking sebesar Rp24 Triliun dengan komposisi non Primary sebesar Rp8,25 triliun (34% dari total target booking), namun realisasinya per September baru mencapai Rp3,8 (46,3% dari target).
+2. Untuk meningkatkan booking BNI Griya non Primary, melalui memo nomor SSE/6/6092 tanggal 14 Oktober 2026, Divisi SSE mengajukan program khusus BNI Griya Top Up dan Take Over, berupa pricing, simplifikasi proses, dan reward.
+3. Menindaklanjuti butir 2 di atas, bersama ini kami sampaikan tanggapan atas usulan Divisi SSE sebagaimana terlampir pada tabel.
+4. Sehubungan dengan hal tersebut, kami mohon bantuan kepada Divisi NSD dan SSE untuk:
+a. Mengoptimalkan Program BNI Griya untuk pembiayaan Take Over dan Top Up.
+b. Menginformasikan kepada segenap unit operasional di lingkungan kerja Saudara untuk dipedomani pelaksanaannya.
+c. Memastikan pemberian program khusus tetap disertai penerapan prinsip kehati-hatian, pemenuhan persyaratan kredit, serta analisa kelayakan dan kemampuan membayar calon debitur sesuai ketentuan yang berlaku.
+d. Melakukan monitoring secara berkala atas pelaksanaan program, pencapaian target booking, dan kualitas kredit yang dihasilkan dengan berkoordinasi dengan unit terkait, mengingat persetujuan ini bersifat reviewable. Apabila kualitas kredit tidak terjaga, pemberian program khusus dapat ditinjau kembali dan disesuaikan berdasarkan tingkat resiko (risk based pricing) sesuai ketentuan yang berlaku.
+e. Memastikan pelaksanaan dan penyampaian informasi program kepada developer maupun calon debitur sesuai dengan persetujuan serta syarat dan ketentuan yang berlaku.
+5. Untuk keterangan lebih lanjut terkait program tersebut, Saudara dapat menghubungi sebagai berikut:
+a. Divisi CRP : Sdri. Nutisa Indriyani (Nutisa.Indriyani@bni.co.id)
+b. Divisi RTC :
+- Sdr. Febry Putera P (febry.pamungkas@bni.co.id)
+- Sdri. Yuvie Permatasari (yuvie.permatasari@bni.co.id)
+- Sdr. Darmawan Budiarjo (darmawan.budiarjo@bni.co.id)
+
+CC: Divisi MCM, WEM, COP, BOP, CXC dan CRS`
+      };
+
+      function loadStoreSafe(k, fb) {
+        try { return localStorage.getItem(k) || fb; } catch (e) { return fb; }
+      }
+      function saveStoreSafe(k, val) {
+        try { localStorage.setItem(k, val); } catch (e) {}
+      }
+
+      const state = {
+        step: 1,
+        rawText: '',
+        tableRows: null,
+        imageBase64: null,
+        imageMime: null,
+        apiKey: loadStoreSafe('surat_nsd_gemini_key', ''),
+        modelId: loadStoreSafe('surat_nsd_gemini_model', 'gemini-4-hydrogen'),
+        customTemplateText: '',
+        customTemplateName: '',
+        templateMeta: {
+          city: 'Jakarta',
+          noPrefix: 'NSD / 2.2 /',
+          recipientOrg: 'PT Bank Negara Indonesia (Persero) Tbk.,',
+          recipientTitle: 'Segenap Kantor Wilayah',
+          opening: 'Menunjuk perihal pada pokok surat di atas, dengan ini kami sampaikan hal-hal sebagai berikut:',
+          closing: 'Demikian kami sampaikan. Atas perhatian dan kerja sama Saudara, kami ucapkan terima kasih.',
+          signOrg: 'PT Bank Negara Indonesia (Persero) Tbk.',
+          signDiv: 'Divisi Network Strategy & Development'
+        },
+        lastPerihal: 'Surat-NSD'
+      };
+
+      const els = {
+        stepBar1: document.getElementById('step-bar-1'),
+        stepBar2: document.getElementById('step-bar-2'),
+        stepBar3: document.getElementById('step-bar-3'),
+        stepLabel1: document.getElementById('step-label-1'),
+        stepLabel2: document.getElementById('step-label-2'),
+        stepLabel3: document.getElementById('step-label-3'),
+        dropzone: document.getElementById('dropzone'),
+        fileInput: document.getElementById('memo-file-input'),
+        dropzoneTitle: document.getElementById('dropzone-title'),
+        dropzoneSub: document.getElementById('dropzone-sub'),
+        btnTogglePaste: document.getElementById('btn-toggle-paste'),
+        btnLoadSample: document.getElementById('btn-load-sample'),
+        btnReset: document.getElementById('btn-reset'),
+        pasteWrap: document.getElementById('paste-wrap'),
+        rawMemoText: document.getElementById('raw-memo-text'),
+        btnCompose: document.getElementById('btn-compose'),
+        kbbiBadge: document.getElementById('kbbi-badge'),
+        fileHelperNote: document.getElementById('file-helper-note'),
+
+        emptyPreviewState: document.getElementById('empty-preview-state'),
+        generatedLetterWrap: document.getElementById('generated-letter-wrap'),
+        letterContent: document.getElementById('letter-content'),
+        btnDownloadWord: document.getElementById('btn-download-word'),
+        btnDownloadPdf: document.getElementById('btn-download-pdf'),
+        btnPrint: document.getElementById('btn-print'),
+        toast: document.getElementById('toast')
+      };
+
+      let toastTimer = null;
+      function showToast(msg) {
+        els.toast.textContent = msg;
+        els.toast.classList.remove('hidden');
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => els.toast.classList.add('hidden'), 3200);
+      }
+
+      function escHtml(str) {
+        return String(str || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function setStep(stepNum) {
+        state.step = stepNum;
+        const bars = [els.stepBar1, els.stepBar2, els.stepBar3];
+        const labels = [els.stepLabel1, els.stepLabel2, els.stepLabel3];
+        bars.forEach((bar, idx) => {
+          const isActive = idx + 1 === stepNum;
+          const isDone = idx + 1 < stepNum;
+          bar.className = `h-[2.5px] mb-2.5 transition-colors ${
+            isActive ? 'bg-[#e8681f]' : isDone ? 'bg-[#105565]' : 'bg-[#cbd5dc]'
+          }`;
+          labels[idx].className = `text-xs sm:text-sm transition-colors ${
+            isActive ? 'font-semibold text-[#0e252c]' : 'font-medium text-[#526872]'
+          }`;
+        });
+      }
+
+      function extractDivisionCodes(textBlock) {
+        const matches = [...(textBlock || '').matchAll(/\(([A-Z]{2,5})\)/g)].map((m) => m[1]);
+        return [...new Set(matches)];
+      }
+
+      function buildKanwilContext(rawInstr, perihal, isiText) {
+        const combined = `${rawInstr} ${isiText}`;
+        if (/reviewable/i.test(combined) && /risk\s+based\s+pricing/i.test(combined)) {
+          return 'bahwa persetujuan ini bersifat reviewable, dan apabila kualitas kredit tidak terjaga, pemberian program khusus dapat ditinjau kembali dan disesuaikan berdasarkan tingkat risiko (risk based pricing) sesuai ketentuan yang berlaku';
+        }
+        if (/reviewable/i.test(combined)) {
+          return 'bahwa persetujuan ini bersifat dapat ditinjau kembali (reviewable) sesuai evaluasi kualitas dan ketentuan yang berlaku';
+        }
+        const cleanPerihal = (perihal || 'program terkait')
+          .replace(/^(?:Penyampaian\s+Tanggapan\s+atas\s+|Penyampaian\s+|Usulan\s+)/i, '')
+          .trim();
+        return `terkait pelaksanaan ${cleanPerihal} agar dijalankan sesuai syarat, ketentuan, dan prinsip kehati-hatian yang berlaku`;
+      }
+
+      const DEFAULT_TEMPLATE_META = {
+        city: 'Jakarta',
+        noPrefix: 'NSD / 2.2 /',
+        recipientOrg: 'PT Bank Negara Indonesia (Persero) Tbk.,',
+        recipientTitle: 'Segenap Kantor Wilayah',
+        opening: 'Menunjuk perihal pada pokok surat di atas, dengan ini kami sampaikan hal-hal sebagai berikut:',
+        closing: 'Demikian kami sampaikan. Atas perhatian dan kerja sama Saudara, kami ucapkan terima kasih.',
+        signOrg: 'PT Bank Negara Indonesia (Persero) Tbk.',
+        signDiv: 'Divisi Network Strategy & Development'
+      };
+
+      function extractTemplateMeta(rawTplText) {
+        const meta = { ...DEFAULT_TEMPLATE_META };
+        const txt = (rawTplText || '').replace(/\r\n/g, '\n').trim();
+        if (!txt) return meta;
+        const lines = txt.split('\n').map((l) => l.trim()).filter(Boolean);
+
+        // City (first short line like "Jakarta")
+        if (lines[0] && lines[0].length < 30 && !/^(?:No|Lampiran|Kepada|Perihal)/i.test(lines[0])) {
+          meta.city = lines[0].replace(/,.*$/, '').trim() || 'Jakarta';
+        }
+        // No prefix
+        const noM = txt.match(/^(?:No\.?|Nomor)\s*[:\-]\s*(.+)$/im);
+        if (noM && noM[1].trim()) {
+          meta.noPrefix = noM[1].trim();
+        }
+        // Recipient lines after Kepada
+        const kepIdx = lines.findIndex((l) => /^(?:Kepada|Yth\.?)\s*[:\-]?/i.test(l));
+        if (kepIdx !== -1) {
+          const afterKep = lines[kepIdx].replace(/^(?:Kepada|Yth\.?)\s*[:\-]?\s*/i, '').trim();
+          const cand1 = afterKep || lines[kepIdx + 1] || '';
+          const cand2 = afterKep ? (lines[kepIdx + 1] || '') : (lines[kepIdx + 2] || '');
+          if (cand1 && !/^Perihal/i.test(cand1)) meta.recipientOrg = cand1;
+          if (cand2 && !/^Perihal/i.test(cand2)) meta.recipientTitle = cand2;
+        }
+        // Opening sentence
+        const openM = txt.match(/^(Menunjuk\s+[^\n]+:)/im) || txt.match(/^(Sehubungan\s+dengan[^\n]+:)/im);
+        if (openM && openM[1]) {
+          meta.opening = normalizeKBBI(openM[1].trim()).text;
+        }
+        // Closing sentence
+        const closeM = txt.match(/^(Demikian\s+[^\n]+terima\s+kasih\.?)/im);
+        if (closeM && closeM[1]) {
+          meta.closing = normalizeKBBI(closeM[1].trim()).text;
+        }
+        // Signature block after closing
+        const closeIdx = lines.findIndex((l) => /^Demikian\s+/i.test(l));
+        if (closeIdx !== -1) {
+          const sigLines = lines.slice(closeIdx + 1).filter((l) => !/^CC\s*:/i.test(l));
+          if (sigLines[0]) meta.signOrg = sigLines[0];
+          if (sigLines[1]) meta.signDiv = sigLines[1];
+        }
+        return meta;
+      }
+
+            function buildExactBniLetterHtml({ perihal, referensiLine, lampiran, bodyPointsHtml, usulanTableHtml, arahanHtml, picTableHtml, ccText }) {
+        return `
+          <div class="preview-only-header" style="text-align:right;margin-bottom:14px;">
+            <img src="${BNI_LOGO_URI}" alt="BNI" style="height:42px;width:auto;display:inline-block;" />
+          </div>
+
+          <div style="margin-bottom:10px;font-size:10pt;">Jakarta</div>
+
+          <table style="border-collapse:collapse;width:100%;margin-bottom:6px;font-size:10pt;">
+            <tr>
+              <td style="width:82px;padding:1px 0;vertical-align:top;">No.</td>
+              <td style="width:14px;padding:1px 0;vertical-align:top;">:</td>
+              <td style="padding:1px 0;vertical-align:top;">NSD / 2.2 /</td>
+            </tr>
+            <tr>
+              <td style="padding:1px 0;vertical-align:top;">Lampiran</td>
+              <td style="padding:1px 0;vertical-align:top;">:</td>
+              <td style="padding:1px 0;vertical-align:top;">${escHtml(lampiran || '--')}</td>
+            </tr>
+            <tr>
+              <td style="padding:4px 0 1px;vertical-align:top;">Kepada</td>
+              <td style="padding:4px 0 1px;vertical-align:top;">:</td>
+              <td style="padding:4px 0 1px;vertical-align:top;"></td>
+            </tr>
+          </table>
+
+          <div style="margin-bottom:12px;font-size:10pt;font-weight:700;line-height:1.4;">
+            <div>PT Bank Negara Indonesia (Persero) Tbk.,</div>
+            <div>Segenap Kantor Wilayah</div>
+          </div>
+
+          <table style="border-collapse:collapse;width:100%;margin-bottom:14px;font-size:10pt;">
+            <tr>
+              <td style="width:82px;padding:1px 0;vertical-align:top;">Perihal</td>
+              <td style="width:14px;padding:1px 0;vertical-align:top;">:</td>
+              <td style="padding:1px 0;vertical-align:top;">${italicizeForeignTerms(escHtml(perihal))}</td>
+            </tr>
+          </table>
+
+          <div style="font-weight:700;text-decoration:underline;margin-bottom:12px;font-size:10pt;">
+            ${escHtml(referensiLine)}
+          </div>
+
+          <p style="font-size:10pt;">Menunjuk perihal pada pokok surat di atas, dengan ini kami sampaikan hal-hal sebagai berikut:</p>
+
+          ${bodyPointsHtml}
+          ${usulanTableHtml}
+          ${arahanHtml}
+          ${picTableHtml}
+
+          <p style="margin-top:12px;font-size:10pt;">Demikian kami sampaikan. Atas perhatian dan kerja sama Saudara, kami ucapkan terima kasih.</p>
+
+          <div style="margin-top:24px;font-size:10pt;font-weight:700;line-height:1.4;">
+            <div>PT Bank Negara Indonesia (Persero) Tbk.</div>
+            <div>Divisi Network Strategy &amp; Development</div>
+            <div style="height:56px;"></div>
+          </div>
+
+          <div style="margin-top:14px;font-size:10pt;font-weight:700;">CC: ${escHtml(ccText)}</div>
+
+          <div class="preview-only-footer" style="margin-top:36px;width:100%;text-align:right;">
+            <div style="display:inline-block;text-align:right;font-size:8.5pt;color:#006677;line-height:1.35;">
+              <div style="font-weight:700;">PT Bank Negara Indonesia (Persero) Tbk.</div>
+              <div style="font-weight:700;margin-bottom:2px;">Kantor Pusat</div>
+              <div>Jl. Jend. Sudirman Kav. 1</div>
+              <div>Jakarta Pusat 10220, Indonesia</div>
+              <div style="color:#2563EB;text-decoration:underline;">www.bni.co.id</div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Potong seluruh isi lampiran/juklak yang muncul setelah penutup/tanda tangan/nama penandatangan memo
+      function stripAttachmentsAfterSignature(rawText) {
+        let txt = String(rawText || '').replace(/\r\n/g, '\n');
+        // 1) Cut at explicit attachment / juklak headers anywhere after the intro
+        const lampMatch = txt.search(/\n\s*(?:LAMPIRAN\s+[A-Z0-9IVX]+|PETUNJUK\s+PELAKSANAAN|JUKLAK\b|DAFTAR\s+LAMPIRAN|FORMULIR\s+INSTAN)/i);
+        if (lampMatch > 150) {
+          txt = txt.slice(0, lampMatch);
+        }
+        // 2) After closing ("Demikian kami sampaikan..."), keep only up to ~10 lines (signature, signer name, CC) and drop anything further
+        const closeIdx = txt.search(/\n\s*(?:Demikian\s+kami\s+sampaikan|Demikian\s+disampaikan|Atas\s+perhatian\s+dan\s+kerja\s*sama)/i);
+        if (closeIdx !== -1) {
+          const beforeClose = txt.slice(0, closeIdx);
+          const afterCloseLines = txt.slice(closeIdx).split('\n');
+          const keptTail = [];
+          for (let i = 0; i < afterCloseLines.length && i < 14; i++) {
+            const line = afterCloseLines[i];
+            if (i > 1 && /^\s*(?:LAMPIRAN|PETUNJUK\s+PELAKSANAAN|NO\s+SYARAT|SYARAT\s*&\s*KETENTUAN)/i.test(line)) {
+              break;
+            }
+            keptTail.push(line);
+            if (/^\s*CC\s*:/i.test(line)) {
+              break;
+            }
+          }
+          txt = beforeClose + keptTail.join('\n');
+        }
+        return txt.trim();
+      }
+
+      function parseMemoAndBuildHtml(rawText, tableRows) {
+        const text = stripAttachmentsAfterSignature(rawText).replace(/\u00a0/g, ' ').trim();
+        const lines = text.split('\n');
+        let totalKbbiFixed = 0;
+
+        const cleanKBBI = (str) => {
+          const res = normalizeKBBI(str);
+          totalKbbiFixed += res.count;
+          return res.text;
+        };
+
+        function extractHeaderBlock(labelRegex) {
+          const stopRegex = /^(?:Nomor|No\.?|Kepada|Dari|Perihal|Hal|Lampiran|Lamp\.?|Memo\s+Divisi|Menunjuk|Sehubungan|Isi\s+Memo|1\.)/i;
+          for (let i = 0; i < lines.length; i++) {
+            const m = lines[i].match(labelRegex);
+            if (m) {
+              const collected = [m[1].trim()].filter(Boolean);
+              for (let j = i + 1; j < lines.length; j++) {
+                const nextLine = lines[j].trim();
+                if (!nextLine || stopRegex.test(nextLine)) break;
+                collected.push(nextLine);
+              }
+              return collected;
+            }
+          }
+          return [];
+        }
+
+        const nomorList = extractHeaderBlock(/^(?:Nomor|No\.?)\s*[:\-]\s*(.*)$/i);
+        const kepadaList = extractHeaderBlock(/^(?:Kepada|Yth\.?|Tujuan)\s*[:\-]\s*(.*)$/i);
+        const dariList = extractHeaderBlock(/^(?:Dari|Pengirim)\s*[:\-]\s*(.*)$/i);
+        const perihalList = extractHeaderBlock(/^(?:Perihal|Hal|Subjek)\s*[:\-]\s*(.*)$/i);
+        const lampiranList = extractHeaderBlock(/^(?:Lampiran|Lamp\.?)\s*[:\-]\s*(.*)$/i);
+
+        let memoDate = '';
+        const dateMatch =
+          text.match(/^Jakarta\s*,\s*([^\n]+)$/im) ||
+          text.match(/^Tanggal\s*[:\-]\s*([^\n]+)$/im);
+        if (dateMatch && dateMatch[1] && dateMatch[1].trim()) {
+          memoDate = dateMatch[1].trim();
+        }
+
+        let memoNomor = nomorList.join(' & ').trim();
+        if (!memoNomor || /^[A-Z]{2,5}\/?$/.test(memoNomor)) {
+          // Fallback scan for official BNI memo number pattern like RDI/2.1/1234, SBP/3/698, CRP/4.3/8146
+          const codeMatches = [...text.slice(0, 900).matchAll(/\b([A-Z]{2,5}\/[0-9A-Za-z.]+\/[0-9A-Za-z-]+)\b/g)].map((m) => m[1]);
+          const uniqueCodes = [...new Set(codeMatches)];
+          if (uniqueCodes.length > 0) {
+            memoNomor = uniqueCodes.join(' & ');
+          }
+        }
+        if (!memoNomor) memoNomor = '-';
+        const dariRaw = dariList.join(', ');
+        const dariCodes = extractDivisionCodes(dariRaw);
+        const kepadaCodes = extractDivisionCodes(kepadaList.join(', '));
+        const pengirimLabel =
+          dariCodes.length > 1
+            ? `Divisi ${dariCodes.join(' & ')}`
+            : dariCodes.length === 1
+              ? `Divisi ${dariCodes[0]}`
+              : dariRaw || 'Divisi Terkait';
+
+        const divFromNum = [...memoNomor.matchAll(/\b([A-Z]{2,5})\//g)].map((m) => m[1]);
+        const finalDivCodes = dariCodes.length > 0 ? dariCodes : [...new Set(divFromNum)];
+        const divShort = finalDivCodes.length > 1 ? finalDivCodes.join(' & ') : (finalDivCodes[0] || '');
+        const refPrefix = finalDivCodes.length > 1 ? `Memo Bersama Divisi ${divShort}` : (divShort ? `Memo Divisi ${divShort}` : 'Memo Divisi');
+        const referensiLine = `${refPrefix} No. ${memoNomor}${memoDate ? ' Tanggal ' + memoDate : ''}`;
+
+        const perihal = cleanKBBI(perihalList.join(' ') || 'Penyampaian Informasi Memo Masuk');
+        state.lastPerihal = perihal;
+
+        const ccCodes = [...new Set([...dariCodes, ...kepadaCodes.filter((c) => c !== 'NSD')])];
+        const ccText = ccCodes.length > 0 ? ccCodes.join(', ') : 'Divisi Terkait';
+
+        // Strip signature/CC footer and header metadata before parsing body
+        let bodyRegion = text;
+        const introMarker = bodyRegion.search(/(?:Menunjuk\s+(?:pokok\s+memo|perihal|surat)|bersama\s+ini\s+kami\s+sampaikan|dengan\s+ini\s+kami\s+sampaikan)/i);
+        if (introMarker !== -1) {
+          const afterIntroNewline = bodyRegion.indexOf('\n', introMarker);
+          if (afterIntroNewline !== -1) {
+            bodyRegion = bodyRegion.slice(afterIntroNewline + 1);
+          }
+        }
+        const footerCut = bodyRegion.search(/\n\s*(?:Demikian\s+kami\s+sampaikan|Demikian\s+disampaikan|DIVISI\s+[A-Z ]{4,}|CC\s*:)/i);
+        if (footerCut !== -1) {
+          bodyRegion = bodyRegion.slice(0, footerCut);
+        }
+
+        // Split all top-level numbered points (1., 2., 3., 4., 5., ...) dynamically
+        const pointRegex = /(?:^|\n)\s*(\d+)\.\s+([\s\S]*?)(?=\n\s*\d+\.\s+|$)/g;
+        const allPoints = [];
+        let pm;
+        while ((pm = pointRegex.exec(bodyRegion)) !== null) {
+          const content = pm[2].trim();
+          if (content) allPoints.push({ num: Number(pm[1]), content });
+        }
+
+        let contentPoints = [];
+        let arahanRaw = '';
+        let picRaw = '';
+
+        if (allPoints.length > 0) {
+          for (const pt of allPoints) {
+            const c = pt.content;
+            // Detect PIC / contact point
+            if (/(?:menghubungi|keterangan\s+lebih\s+lanjut|informasi\s+lebih\s+lanjut|PIC)/i.test(c) && (/@|Sdr|Divisi/i.test(c))) {
+              picRaw = c;
+              continue;
+            }
+            // Detect directive / request for help point (usually contains "mohon bantuan" or sub-items a. b. c.)
+            if (/(?:mohon\s+bantuan|Sehubungan\s+dengan\s+hal\s+tersebut|dimohon\s+bantuan|diharapkan\s+agar)/i.test(c)) {
+              arahanRaw = c;
+              continue;
+            }
+            // Skip redundant "Menindaklanjuti butir X... tabel" bridge if we already have a table, merge into previous point
+            if (tableRows && tableRows.length > 1 && /^Menindaklanjuti\s+butir\s+\d+/i.test(c) && contentPoints.length > 0) {
+              contentPoints[contentPoints.length - 1] += ' Menindaklanjuti hal tersebut, berikut tanggapan atas usulan dimaksud:';
+              continue;
+            }
+            contentPoints.push(c);
+          }
+        } else {
+          // Non-numbered memo: keep all substantive paragraphs after header lines
+          const metaLine = /^(?:MEMO|MEMORANDUM|Jakarta|Nomor|No\.?|Tanggal|Dari|Pengirim|Kepada|Yth\.?|Perihal|Hal|Lampiran|Memo\s+Divisi|Menunjuk|Isi\s+Memo|CC\s*:)/i;
+          const rawParas = bodyRegion
+            .split(/\n\s*\n/)
+            .map((p) => p.split('\n').filter((l) => l.trim() && !metaLine.test(l.trim())).join(' ').trim())
+            .filter(Boolean);
+          contentPoints = rawParas.length > 0 ? rawParas : [text];
+        }
+
+        const bodyPointsHtml = contentPoints.map((pt, idx) => {
+          return formatStructuredPoint(idx + 1, cleanKBBI(pt));
+        });
+
+        // Render table dynamically (supports 2, 3, 4, or 5 columns from uploaded memo)
+        let usulanTableHtml = '';
+        if (Array.isArray(tableRows) && tableRows.length > 1) {
+          const header = tableRows[0];
+          const rows = tableRows.slice(1);
+          const ths = header.map((h) => `<th>${italicizeForeignTerms(escHtml(cleanKBBI(h || '')))}</th>`).join('');
+          const trs = rows
+            .map((r) => {
+              const tds = header.map((_, ci) => `<td>${italicizeForeignTerms(escHtml(cleanKBBI(r[ci] || ''))).replace(/\n/g, '<br />')}</td>`).join('');
+              return `<tr>${tds}</tr>`;
+            })
+            .join('');
+          usulanTableHtml = `
+            <table class="doc-table">
+              <thead><tr>${ths}</tr></thead>
+              <tbody>${trs}</tbody>
+            </table>`;
+        }
+
+        // Arahan ke Kantor Wilayah (setelah isi memo & tabel, wajib ada konteks dari isi memo)
+        const nextNum = bodyPointsHtml.length + 1;
+        const contextClause = cleanKBBI(buildKanwilContext(arahanRaw, perihal, contentPoints.join(' ')));
+        let arahanItemsHtml = '';
+
+        if (arahanRaw) {
+          const subMatch = arahanRaw.match(/(?:^|\n)\s*[a-z]\.\s+[\s\S]*/);
+          const subBlock = subMatch ? subMatch[0].trim() : arahanRaw;
+          const subLines = subBlock
+            .split(/\n(?=\s*[a-z]\.\s+)/)
+            .map((l) => l.replace(/\n/g, ' ').trim())
+            .filter(Boolean);
+          arahanItemsHtml = subLines
+            .map((l) => `<div style="padding-left:18px;text-indent:-18px;margin-bottom:4px;text-align:justify;">${italicizeForeignTerms(escHtml(cleanKBBI(l)))}</div>`)
+            .join('');
+        } else {
+          arahanItemsHtml = `
+            <div style="padding-left:18px;text-indent:-18px;margin-bottom:4px;text-align:justify;">a. Menginformasikan ketentuan dimaksud kepada segenap unit operasional di lingkungan kerja Saudara untuk dipedomani pelaksanaannya.</div>
+            <div style="padding-left:18px;text-indent:-18px;margin-bottom:4px;text-align:justify;">b. Memantau pelaksanaan program secara berkala dengan tetap menerapkan prinsip kehati-hatian sesuai ketentuan yang berlaku.</div>`;
+        }
+
+        const arahanHtml = `
+          <p>${nextNum}. Sehubungan dengan hal tersebut di atas, kami mohon bantuan Kantor Wilayah untuk menyampaikan kepada Kantor Cabang di bawah supervisi Saudara ${italicizeForeignTerms(escHtml(contextClause))}, sehingga Kantor Cabang diminta:</p>
+          <div style="margin:6px 0 12px 16px;">${arahanItemsHtml}</div>`;
+
+        // Tabel PIC (jika ada di memo)
+        let picTableHtml = '';
+        if (picRaw) {
+          const picLines = picRaw.split('\n').map((l) => l.trim()).filter(Boolean);
+          const picRows = [];
+          let currentDiv = '';
+          for (const pl of picLines) {
+            const divInline = pl.match(/^[a-z]\.\s*(Divisi\s+[A-Za-z0-9 &]+?)\s*[:\-]?\s*(Sdr[i]?\.?\s+.+)$/i);
+            if (divInline) {
+              currentDiv = divInline[1].trim();
+              picRows.push([currentDiv, divInline[2].trim()]);
+              continue;
+            }
+            const divOnly = pl.match(/^[a-z]\.\s*(Divisi\s+[A-Za-z0-9 &]+?)\s*[:\-]?$/i);
+            if (divOnly) {
+              currentDiv = divOnly[1].trim();
+              continue;
+            }
+            const personLine = pl.match(/^(?:[•\-\*]|\d+\))\s*(.+)$/);
+            if (personLine && currentDiv) {
+              const alreadyListed = picRows.some((r) => r[0] === currentDiv);
+              picRows.push([alreadyListed ? '' : currentDiv, personLine[1].trim()]);
+            }
+          }
+          if (picRows.length > 0) {
+            const picTrs = picRows
+              .map((r) => `<tr><td style="width:32%;">${escHtml(r[0])}</td><td style="width:68%;">${escHtml(r[1])}</td></tr>`)
+              .join('');
+            picTableHtml = `
+              <p>${nextNum + 1}. Informasi lebih lanjut dapat menghubungi PIC sebagai berikut:</p>
+              <table class="doc-table">
+                <thead>
+                  <tr>
+                    <th style="width:32%;">Instansi</th>
+                    <th style="width:68%;">Nama PIC</th>
+                  </tr>
+                </thead>
+                <tbody>${picTrs}</tbody>
+              </table>`;
+          }
+        }
+
+        const fullHtml = buildExactBniLetterHtml({
+          perihal,
+          referensiLine,
+          lampiran: '--',
+          bodyPointsHtml: bodyPointsHtml.join(''),
+          usulanTableHtml,
+          arahanHtml,
+          picTableHtml,
+          ccText
+        });
+
+        return { html: fullHtml, kbbiFixed: totalKbbiFixed };
+      }
+
+      // File reader (.docx with table extraction, .pdf, .txt, image note)
+      async function readUploadedFile(file) {
+        const lower = file.name.toLowerCase();
+        els.fileHelperNote.classList.add('hidden');
+
+        if (lower.endsWith('.txt')) {
+          return { text: await file.text(), tableRows: null };
+        }
+        if (lower.endsWith('.docx')) {
+          if (!window.mammoth) throw new Error('Pembaca file Word belum siap.');
+          const arrayBuffer = await file.arrayBuffer();
+          const rawRes = await window.mammoth.extractRawText({ arrayBuffer });
+          let tableRows = null;
+          try {
+            const htmlRes = await window.mammoth.convertToHtml({ arrayBuffer });
+            let htmlMain = htmlRes.value || '';
+            const cutHtml = htmlMain.search(/(?:Demikian\s+kami\s+sampaikan|LAMPIRAN\s+[A-Z0-9IVX]+|PETUNJUK\s+PELAKSANAAN)/i);
+            if (cutHtml > 150) htmlMain = htmlMain.slice(0, cutHtml);
+            const parsedDoc = new DOMParser().parseFromString(htmlMain, 'text/html');
+            const tbl = parsedDoc.querySelector('table');
+            if (tbl) {
+              const rows = [...tbl.querySelectorAll('tr')].map((tr) => {
+                return [...tr.querySelectorAll('th, td')].map((c) => c.textContent.trim());
+              }).filter((r) => r.some((cell) => cell));
+              if (rows.length > 0) tableRows = rows;
+            }
+          } catch (e) {
+            // Text-only fallback
+          }
+          return { text: rawRes.value || '', tableRows };
+        }
+        if (lower.endsWith('.doc') && !lower.endsWith('.docx')) {
+          const arrayBuffer = await file.arrayBuffer();
+          let decoded = '';
+          try {
+            decoded = new TextDecoder('windows-1252').decode(arrayBuffer);
+          } catch (e) {
+            decoded = new TextDecoder('iso-8859-1').decode(arrayBuffer);
+          }
+          // Locate main memo text stream in Word 97-2003 (.doc) binary
+          const m = decoded.match(/(?:Jakarta,|Memo\s+Divisi|Nomor[\x07\x09\s]*:|Kepada[\x07\x09\s]*:)[\x07\x09\x0d\x13\x14\x15\x20-\xff]{120,}/);
+          if (!m) {
+            els.pasteWrap.classList.remove('hidden');
+            els.fileHelperNote.textContent = 'File .doc ini terenkripsi atau memakai format biner khusus. Simpan sebagai .docx/.pdf di Word atau tempel teksnya di kotak atas.';
+            els.fileHelperNote.classList.remove('hidden');
+            return { text: '', tableRows: null };
+          }
+          let raw = m[0];
+          // Remove Word field code instructions like \x13 HYPERLINK "mailto:..." \x14 display \x15
+          raw = raw.replace(/\x13[^\x14\x15]*\x14/g, '').replace(/[\x13\x14\x15]/g, '');
+          // Stop before Lampiran B / Petunjuk Pelaksanaan if attached at end of memo
+          const lampCut = raw.search(/\r\s*LAMPIRAN\s+[AB]\b/i);
+          if (lampCut > 200) {
+            raw = raw.slice(0, lampCut);
+          }
+
+          // Extract 2-column Usulan/Tanggapan table rows if delimited by \x07\x07
+          let tableRows = null;
+          const tblMatch = raw.match(/(Usulan[^\x07]{0,60})\x07([^\x07]{1,60})\x07\x07([\s\S]*?)(?=\r\s*(?:Sehubungan|Untuk\s+keterangan|Demikian)|$)/i);
+          if (tblMatch) {
+            const rows = [[tblMatch[1].trim(), tblMatch[2].trim()]];
+            const rawRowChunks = tblMatch[3].split('\x07\x07');
+            for (const chunk of rawRowChunks) {
+              const cells = chunk.split('\x07').map((c) => c.replace(/\r/g, '\n').trim()).filter(Boolean);
+              if (cells.length >= 2) {
+                rows.push([cells[0], cells[1]]);
+              }
+            }
+            if (rows.length > 1) {
+              tableRows = rows;
+              raw = raw.replace(tblMatch[0], '\r');
+            }
+          }
+
+          // Normalize header table cells (\x07) into clean "Label : Value" lines
+          let cleaned = raw
+            .replace(/\x07\x07/g, '\n')
+            .replace(/\x07/g, ' ')
+            .replace(/\r/g, '\n')
+            .replace(/[^\x09\x0a\x20-\x7e\xa0-\xff\u2013\u2014\u2018\u2019\u201c\u201d\u2022]+/g, '')
+            .replace(/[ \t]{2,}/g, ' ')
+            .replace(/\n[ \t]+/g, '\n')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim();
+
+          return { text: cleaned, tableRows };
+        }
+        if (lower.endsWith('.pdf')) {
+          if (!window.pdfjsLib) throw new Error('Pembaca PDF belum siap.');
+          const arrayBuffer = await file.arrayBuffer();
+          const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+          let fullText = '';
+          for (let p = 1; p <= pdf.numPages; p++) {
+            const page = await pdf.getPage(p);
+            const content = await page.getTextContent();
+            let lastY = null;
+            let pageLines = [];
+            let currentLine = '';
+            for (const item of content.items) {
+              const str = (item.str || '').trim();
+              if (!str) continue;
+              const y = item.transform ? Math.round(item.transform[5] / 4) : lastY;
+              if (lastY !== null && y !== lastY) {
+                if (currentLine.trim()) pageLines.push(currentLine.trim());
+                currentLine = str;
+              } else {
+                currentLine += (currentLine ? ' ' : '') + str;
+              }
+              lastY = y;
+            }
+            if (currentLine.trim()) pageLines.push(currentLine.trim());
+            fullText += pageLines.join('\n') + '\n';
+          }
+          const trimmed = fullText.trim();
+          if (trimmed.length < 40) {
+            // Scanned PDF detected! Render up to 3 pages as JPEG base64 for Gemini multimodal AI
+            const pageImages = [];
+            const maxPages = Math.min(pdf.numPages, 3);
+            for (let p = 1; p <= maxPages; p++) {
+              const page = await pdf.getPage(p);
+              const viewport = page.getViewport({ scale: 1.5 });
+              const canvas = document.createElement('canvas');
+              canvas.width = viewport.width;
+              canvas.height = viewport.height;
+              await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+              const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+              pageImages.push(dataUrl.split(',')[1]);
+            }
+            if (!state.apiKey) {
+                els.fileHelperNote.textContent = `PDF hasil scan (${pdf.numPages} halaman) terdeteksi — diproses otomatis oleh AI.`;
+              els.fileHelperNote.classList.remove('hidden');
+            }
+            return { text: '', tableRows: null, imageBase64: pageImages, imageMime: 'image/jpeg' };
+          }
+          return { text: trimmed, tableRows: null };
+        }
+        if (/\.(png|jpe?g)$/.test(lower)) {
+          const base64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const res = String(reader.result || '');
+              resolve(res.includes(',') ? res.split(',')[1] : res);
+            };
+            reader.onerror = () => reject(new Error('Gagal membaca file gambar.'));
+            reader.readAsDataURL(file);
+          });
+          if (!state.apiKey) {
+            els.fileHelperNote.textContent = 'File gambar terdeteksi — diproses otomatis oleh AI.';
+            els.fileHelperNote.classList.remove('hidden');
+          }
+          return { text: '', tableRows: null, imageBase64: base64, imageMime: file.type || 'image/png' };
+        }
+        throw new Error('Gunakan file .docx, .pdf, .txt, atau tempel teks langsung.');
+      }
+
+      async function handleFileSelection(file) {
+        if (!file) return;
+        state.rawText = '';
+        state.tableRows = null;
+        state.imageBase64 = null;
+        state.imageMime = null;
+        els.rawMemoText.value = '';
+        els.dropzoneTitle.textContent = file.name;
+        els.dropzoneSub.textContent = 'Membaca isi memo...';
+        els.btnReset.classList.remove('hidden');
+        try {
+          const { text, tableRows, imageBase64, imageMime } = await readUploadedFile(file);
+          state.rawText = text || '';
+          state.tableRows = tableRows || null;
+          state.imageBase64 = imageBase64 || null;
+          state.imageMime = imageMime || null;
+          if (text) {
+            els.rawMemoText.value = text;
+            els.dropzoneSub.textContent = tableRows
+              ? 'Teks & tabel terbaca — surat langsung disusun'
+              : 'Isi memo terbaca — surat langsung disusun';
+            await composeLetter();
+          } else if (imageBase64) {
+            if (true) {
+              els.dropzoneSub.textContent = 'Scan terbaca — AI sedang menyusun surat...';
+              await composeLetter();
+            } else {
+              els.dropzoneSub.textContent = 'Scan siap — klik Susun surat';
+                showToast(`File scan "${file.name}" siap disusun.`);
+            }
+          } else {
+            els.dropzoneSub.textContent = 'Tempel teks memo di kotak bawah';
+          }
+        } catch (err) {
+          els.dropzoneSub.textContent = err.message || 'Gagal membaca file';
+          showToast(err.message || 'Gagal membaca file.');
+        }
+      }
+
+      function renderStructuredAiToHtml(data) {
+        let totalKbbiFixed = 0;
+        const cleanKBBI = (str) => {
+          const res = normalizeKBBI(str);
+          totalKbbiFixed += res.count;
+          return res.text;
+        };
+
+        const perihal = cleanKBBI(data.perihal || 'Penyampaian Informasi Program');
+        state.lastPerihal = perihal;
+        let referensiLine = (data.referensiLine || 'Memo Divisi -').trim();
+        // Pastikan nama panjang divisi selalu disingkat: "Memo Divisi Business Program (SBP) No. ..." -> "Memo Divisi SBP No. ..."
+        referensiLine = referensiLine
+          .replace(/Memo\s+(Bersama\s+)?Divisi\s+[^\(\n]+\(([A-Z]{2,5})\)/gi, (_, b, code) =>
+            b ? `Memo Bersama Divisi ${code}` : `Memo Divisi ${code}`
+          )
+          .replace(/\s{2,}/g, ' ')
+          .trim();
+        const lampiran = data.lampiran || '--';
+        const ccText = data.cc || 'Divisi Terkait';
+
+        const points = Array.isArray(data.bodyPoints) && data.bodyPoints.length > 0
+          ? data.bodyPoints
+          : ['Menindaklanjuti memo dimaksud, berikut kami sampaikan informasi sesuai pokok surat di atas.'];
+
+        const bodyPointsHtml = points
+          .map((pt, i) => formatStructuredPoint(i + 1, cleanKBBI(pt.replace(/^\d+\.\s*/, ''))))
+          .join('');
+
+        let usulanTableHtml = '';
+        if (Array.isArray(data.usulanTable) && data.usulanTable.length > 1) {
+          const hdr = data.usulanTable[0];
+          const rows = data.usulanTable.slice(1);
+          const ths = hdr.map((h) => `<th>${italicizeForeignTerms(escHtml(cleanKBBI(h || '')))}</th>`).join('');
+          const trs = rows
+            .map((r) => {
+              const tds = hdr.map((_, ci) => `<td>${italicizeForeignTerms(escHtml(cleanKBBI(r[ci] || ''))).replace(/\n/g, '<br />')}</td>`).join('');
+              return `<tr>${tds}</tr>`;
+            })
+            .join('');
+          usulanTableHtml = `
+            <table class="doc-table">
+              <thead><tr>${ths}</tr></thead>
+              <tbody>${trs}</tbody>
+            </table>`;
+        }
+
+        const nextNum = points.length + 1;
+        const contextClause = cleanKBBI(data.arahanContext || `terkait pelaksanaan ${perihal} sesuai ketentuan yang berlaku`);
+        const arahanList = Array.isArray(data.arahanPoints) && data.arahanPoints.length > 0
+          ? data.arahanPoints
+          : ['Menginformasikan ketentuan dimaksud kepada unit operasional terkait untuk dipedomani.', 'Memantau pelaksanaan secara berkala sesuai prinsip kehati-hatian.'];
+
+        const letters = 'abcdefghijklmnopqrstuvwxyz';
+        const arahanItemsHtml = arahanList
+          .map((item, idx) => {
+            const cleanItem = cleanKBBI(item.replace(/^[a-z]\.\s*/i, ''));
+            return `<div style="padding-left:18px;text-indent:-18px;margin-bottom:4px;text-align:justify;">${letters[idx] || '-'}. ${italicizeForeignTerms(escHtml(cleanItem))}</div>`;
+          })
+          .join('');
+
+        const arahanHtml = `
+          <p>${nextNum}. Sehubungan dengan hal tersebut di atas, kami mohon bantuan Kantor Wilayah untuk menyampaikan kepada Kantor Cabang di bawah supervisi Saudara ${italicizeForeignTerms(escHtml(contextClause))}, sehingga Kantor Cabang diminta:</p>
+          <div style="margin:6px 0 12px 16px;">${arahanItemsHtml}</div>`;
+
+        let picTableHtml = '';
+        if (Array.isArray(data.picTable) && data.picTable.length > 0) {
+          const picRows = data.picTable.filter((r) => Array.isArray(r) && (r[0] || r[1]));
+          if (picRows.length > 0) {
+            const trs = picRows
+              .map((r) => `<tr><td style="width:32%;">${escHtml(r[0] || '')}</td><td style="width:68%;">${escHtml(r[1] || '')}</td></tr>`)
+              .join('');
+            picTableHtml = `
+              <p>${nextNum + 1}. Informasi lebih lanjut dapat menghubungi PIC sebagai berikut:</p>
+              <table class="doc-table">
+                <thead><tr><th style="width:32%;">Instansi</th><th style="width:68%;">Nama PIC</th></tr></thead>
+                <tbody>${trs}</tbody>
+              </table>`;
+          }
+        }
+
+        const fullHtml = buildExactBniLetterHtml({
+          perihal,
+          referensiLine,
+          lampiran,
+          bodyPointsHtml,
+          usulanTableHtml,
+          arahanHtml,
+          picTableHtml,
+          ccText
+        });
+        return { html: fullHtml, kbbiFixed: totalKbbiFixed };
+      }
+
+      async function callGeminiAI(rawText, imageBase64, imageMime, tableRows) {
+        const systemInstruction = `Kamu adalah asisten penyusun surat resmi Divisi Network Strategy & Development (NSD) PT Bank Negara Indonesia (Persero) Tbk.
+Tugasmu: membaca isi memo masuk dan mengubahnya ke struktur JSON untuk template Surat Segenap Kantor Wilayah (S-Seg Wil).
+
+ATURAN WAJIB:
+1. Bahasa HARUS 100% baku sesuai KBBI. DILARANG memakai kata "monitoring" (ganti menjadi "memantau" atau "pemantauan"), "kerjasama" (ganti "kerja sama"), "analisa" (ganti "analisis"), "progam" (ganti "program"), "resiko" (ganti "risiko").
+2. Hanya buat isi surat (bodyPoints) dan arahan ke Kantor Wilayah/Cabang (arahanContext & arahanPoints) sesuai isi memo.
+3. "referensiLine" WAJIB diambil murni dari divisi pengirim (SINGKATAN saja, misal SSE, SBP, SME, CRP — JANGAN tulis nama panjang divisi), nomor memo, dan tanggal memo yang diunggah dengan format persis: "Memo Divisi [SINGKATAN] No. [NOMOR_MEMO] Tanggal [TANGGAL_MEMO]" (contoh: "Memo Divisi SSE No. SSE/6/6957 Tanggal 18 November 2026") atau "Memo Bersama Divisi [SINGKATAN_1] & [SINGKATAN_2] No. [NOMOR_1] & [NOMOR_2] Tanggal [TANGGAL_MEMO]". Baca angka nomor memo dengan sangat teliti.
+4. "arahanContext" WAJIB berupa klausa konteks dari isi memo yang menyambung kalimat: "Sehubungan dengan hal tersebut di atas, kami mohon bantuan Kantor Wilayah untuk menyampaikan kepada Kantor Cabang di bawah supervisi Saudara [arahanContext], sehingga Kantor Cabang diminta:" (tanpa mengulang kata "Sehubungan..." atau "sehingga Kantor Cabang diminta:").
+5. Pertahankan struktur isi memo: jika memo memiliki poin-poin atau sub-poin (a., b., •), tulis tetap sebagai poin-poin dengan baris baru (\n) di dalam "bodyPoints"; jika ada tabel (berapa pun jumlah kolomnya), masukkan seluruh kolom dan barisnya ke "usulanTable" [[col1, col2, ...], ...]. Jika tidak ada tabel, kosongkan [].
+6. Jika ada daftar PIC, masukkan ke "picTable" sebagai array 2 kolom [[Instansi, Nama PIC (email)], ...].
+7. "cc" berisi singkatan divisi pengirim dan divisi terkait selain NSD (contoh: "CRP, RTC, SSE").
+8. ABAIKAN SEMUA LAMPIRAN (seperti Lampiran A, Lampiran B, Petunjuk Pelaksanaan / Juklak, formulir, atau halaman tambahan setelah penutup/tanda tangan/nama penandatangan memo). Hanya baca dan ambil isi badan utama memo sampai bagian tanda tangan atau nama penandatangan (dan CC) saja.
+9. Nomor memo dan tanggal pada "referensiLine" WAJIB mengikuti persis memo yang diunggah; JANGAN PERNAH mengarang kode divisi yang tidak ada di memo atau membiarkannya kosong.
+10. Setiap istilah asing (bahasa Inggris/istilah perbankan asing seperti *Take Over*, *Top Up*, *reviewable*, *risk based pricing*, *online*, *pricing*, *appraisal*, *payroll*, dll.) WAJIB dibungkus tanda bintang tunggal agar dicetak miring (*italic*).
+
+Kembalikan HANYA JSON valid dengan kunci:
+{
+  "perihal": "string",
+  "referensiLine": "string",
+  "lampiran": "string (default '--')",
+  "bodyPoints": ["string", ...],
+  "usulanTable": [["string", "string"], ...],
+  "arahanContext": "string",
+  "arahanPoints": ["string", ...],
+  "picTable": [["string", "string"], ...],
+  "cc": "string"
+}`;
+
+        const parts = [];
+        let promptText = 'Baca HANYA isi dari SURAT SUMBER (MEMO MASUK) yang dilampirkan di bawah ini (baik teks maupun gambar scan). Ambil 100% perihal, nomor memo, tanggal memo, isi poin, tabel, arahan, PIC, dan CC murni dari memo masuk ini, lalu susun dalam JSON sesuai aturan S-Seg Wil NSD dan bahasa baku KBBI:\n\n';
+        if (rawText) {
+          promptText += stripAttachmentsAfterSignature(rawText);
+        } else if (imageBase64) {
+          promptText += '[Isi memo terdapat pada gambar/halaman scan PDF terlampir. Baca seluruh teks, angka, tabel, dan tanda tangan pada gambar tersebut dengan teliti.]';
+        }
+        if (Array.isArray(tableRows) && tableRows.length > 0) {
+          promptText += '\n\n[Tabel dalam memo]:\n' + JSON.stringify(tableRows);
+        }
+        parts.push({ text: promptText });
+        if (imageBase64) {
+          const imgs = Array.isArray(imageBase64) ? imageBase64 : [imageBase64];
+          for (const b64 of imgs) {
+            parts.push({
+              inline_data: {
+                mime_type: imageMime || 'image/jpeg',
+                data: b64
+              }
+            });
+          }
+        }
+
+        const payload = {
+          system_instruction: { parts: [{ text: systemInstruction }] },
+          contents: [{ role: 'user', parts }],
+          generationConfig: { responseMimeType: 'application/json', temperature: 0.2 }
+        };
+        const resp = await fetch('/api/compose', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: 'gemini-4-hydrogen', payload })
+        });
+        if (!resp.ok) {
+          const errData = await resp.json().catch(() => ({}));
+          throw new Error(errData.error || `Server AI gagal (${resp.status})`);
+        }
+        const json = await resp.json();
+        let rawOut = (json?.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('').trim();
+        rawOut = rawOut.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+        const firstBrace = rawOut.indexOf('{');
+        const lastBrace = rawOut.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace > firstBrace) {
+          rawOut = rawOut.slice(firstBrace, lastBrace + 1);
+        }
+        if (!rawOut) throw new Error('AI mengembalikan respons kosong.');
+        return JSON.parse(rawOut);
+      }
+
+      async function composeLetter() {
+        const text = (els.rawMemoText.value || state.rawText || '').trim();
+        if (!text && !state.imageBase64) {
+          showToast('Unggah file memo atau klik "Contoh Memo BNI" terlebih dahulu.');
+          return;
+        }
+
+        if (true) {
+          const origLabel = els.btnCompose.textContent;
+          els.btnCompose.disabled = true;
+          els.btnCompose.textContent = 'AI sedang membaca memo...';
+          els.emptyPreviewState.textContent = 'AI sedang membaca isi memo dan menyusunnya ke template surat NSD... Mohon tunggu sebentar.';
+          els.emptyPreviewState.classList.remove('hidden');
+          els.generatedLetterWrap.classList.add('hidden');
+          try {
+            const aiData = await callGeminiAI(text, state.imageBase64, state.imageMime, state.tableRows);
+            const { html } = renderStructuredAiToHtml(aiData);
+            els.letterContent.innerHTML = html;
+            els.emptyPreviewState.classList.add('hidden');
+            els.generatedLetterWrap.classList.remove('hidden');
+            setStep(2);
+            els.dropzoneSub.textContent = 'Berhasil disusun oleh AI';
+            els.kbbiBadge.textContent = 'Disusun oleh AI (KBBI)';
+            els.kbbiBadge.classList.remove('hidden');
+            showToast('AI selesai membaca memo dan menyusun surat sesuai template NSD.');
+            return;
+          } catch (err) {
+            const msg = err.message || 'AI gagal merespons';
+            if (!text) {
+              els.emptyPreviewState.textContent = `Gagal memproses file scan: ${msg}. Pastikan API Key valid atau coba unggah ulang.`;
+              els.dropzoneSub.textContent = 'Gagal dibaca AI — cek pesan di sebelah kanan';
+              showToast(msg);
+              return;
+            }
+            showToast(msg + ' — beralih ke mode lokal.');
+          } finally {
+            els.btnCompose.disabled = false;
+            els.btnCompose.textContent = origLabel;
+          }
+        }
+
+        if (!text) {
+          showToast('Pastikan GEMINI_API_KEY sudah diatur di Cloudflare Settings -> Variables & Secrets.');
+          return;
+        }
+
+        const { html, kbbiFixed } = parseMemoAndBuildHtml(text, state.tableRows);
+        els.letterContent.innerHTML = html;
+        els.emptyPreviewState.classList.add('hidden');
+        els.generatedLetterWrap.classList.remove('hidden');
+        setStep(2);
+
+        if (kbbiFixed > 0) {
+          els.kbbiBadge.textContent = `${kbbiFixed} kata dibakukan (KBBI)`;
+          els.kbbiBadge.classList.remove('hidden');
+          showToast(`Surat disusun sesuai template & ${kbbiFixed} kata dibakukan sesuai KBBI.`);
+        } else {
+          els.kbbiBadge.textContent = 'Bahasa baku KBBI';
+          els.kbbiBadge.classList.remove('hidden');
+          showToast('Surat berhasil disusun. Kamu bisa mengedit langsung sebelum mengunduh.');
+        }
+      }
+
+      function downloadWord() {
+        const clone = els.letterContent.cloneNode(true);
+        clone.querySelectorAll('.preview-only-header, .preview-only-footer').forEach((el) => el.remove());
+
+        const htmlDoc = `
+          <html xmlns:o="urn:schemas-microsoft-com:office:office"
+                xmlns:w="urn:schemas-microsoft-com:office:word"
+                xmlns="http://www.w3.org/TR/REC-html40">
+          <head>
+            <meta charset="utf-8" />
+            <title>${escHtml(state.lastPerihal)}</title>
+            <!--[if gte mso 9]><xml>
+              <w:WordDocument>
+                <w:View>Print</w:View>
+                <w:Zoom>100</w:Zoom>
+              </w:WordDocument>
+            </xml><![endif]-->
+            <style>
+              @page Section1 {
+                size: 21cm 29.7cm;
+                margin: 2.5cm 2.2cm 2.5cm 2.5cm;
+                mso-header-margin: 1.0cm;
+                mso-footer-margin: 0.9cm;
+                mso-title-page: yes;
+                mso-first-header: h1;
+                mso-header: h1;
+                mso-first-footer: ff1;
+                mso-footer: f1;
+              }
+              div.Section1 { page: Section1; }
+              body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.45; color: #000000; }
+              p, .point-item, .sub-item { margin: 0 0 7pt; text-align: justify; }
+              .doc-table { width: 100%; border-collapse: collapse; margin: 8pt 0 12pt; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; }
+              .doc-table th, .doc-table td { border: 1px solid #000000; padding: 5pt 6pt; vertical-align: top; }
+              .doc-table th { background: #f2f2f2; font-weight: bold; text-align: center; }
+              table.hf-hidden { margin-left: 500in; }
+              div.MsoHeader, div.MsoFooter { font-family: Arial, Helvetica, sans-serif; margin: 0; }
+            </style>
+          </head>
+          <body>
+            <div class="Section1">
+              ${clone.innerHTML}
+            </div>
+
+            <table class="hf-hidden" border="0" cellspacing="0" cellpadding="0">
+              <tr><td>
+                <div style="mso-element:header" id="h1" class="MsoHeader">
+                  <p align="right" style="margin:0;text-align:right;">
+                    <img src="${BNI_LOGO_URI}" alt="BNI" height="40" style="height:40px;width:auto;" />
+                  </p>
+                </div>
+                <div style="mso-element:footer" id="ff1" class="MsoFooter">
+                  <p align="right" style="margin:0;text-align:right;font-family:Arial,sans-serif;font-size:8pt;font-weight:bold;color:#006677;line-height:1.3;">PT Bank Negara Indonesia (Persero) Tbk.</p>
+                  <p align="right" style="margin:0 0 2pt 0;text-align:right;font-family:Arial,sans-serif;font-size:8pt;font-weight:bold;color:#006677;line-height:1.3;">Kantor Pusat</p>
+                  <p align="right" style="margin:0;text-align:right;font-family:Arial,sans-serif;font-size:8pt;color:#006677;line-height:1.3;">Jl. Jend. Sudirman Kav. 1</p>
+                  <p align="right" style="margin:0;text-align:right;font-family:Arial,sans-serif;font-size:8pt;color:#006677;line-height:1.3;">Jakarta Pusat 10220, Indonesia</p>
+                  <p align="right" style="margin:0;text-align:right;font-family:Arial,sans-serif;font-size:8pt;color:#2563EB;text-decoration:underline;line-height:1.3;">www.bni.co.id</p>
+                </div>
+                <div style="mso-element:footer" id="f1" class="MsoFooter">
+                  <p style="margin:0;">&nbsp;</p>
+                </div>
+              </td></tr>
+            </table>
+          </body>
+          </html>`;
+
+        const blob = new Blob(['\ufeff', htmlDoc], { type: 'application/msword' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const slug = (state.lastPerihal || 'surat-nsd')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '')
+          .slice(0, 48);
+        a.href = url;
+        a.download = `S-Seg-Wil-${slug || 'surat-nsd'}.doc`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        setStep(3);
+        showToast('Surat Word (.doc) berhasil diunduh.');
+      }
+
+      function downloadPdf() {
+        const slug = (state.lastPerihal || 'surat-nsd')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '')
+          .slice(0, 48);
+
+        setStep(3);
+        if (window.html2pdf) {
+          showToast('Menyiapkan file PDF...');
+          window.html2pdf()
+            .set({
+              margin: [12, 14, 14, 14],
+              filename: `S-Seg-Wil-${slug || 'surat-nsd'}.pdf`,
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 2, useCORS: true },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            })
+            .from(els.letterContent)
+            .save()
+            .then(() => showToast('File PDF berhasil diunduh.'))
+            .catch(() => window.print());
+        } else {
+          window.print();
+        }
+      }
+
+      // Event Listeners
+      
+      els.fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+          handleFileSelection(e.target.files[0]);
+        }
+      });
+
+      els.dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        els.dropzone.classList.add('border-[#105565]', 'bg-[#f2f8fa]');
+      });
+
+      els.dropzone.addEventListener('dragleave', () => {
+        els.dropzone.classList.remove('border-[#105565]', 'bg-[#f2f8fa]');
+      });
+
+      els.dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        els.dropzone.classList.remove('border-[#105565]', 'bg-[#f2f8fa]');
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+          handleFileSelection(e.dataTransfer.files[0]);
+        }
+      });
+
+      els.btnTogglePaste.addEventListener('click', () => {
+        els.pasteWrap.classList.toggle('hidden');
+        if (!els.pasteWrap.classList.contains('hidden')) {
+          els.rawMemoText.focus();
+        }
+      });
+
+      els.btnLoadSample.addEventListener('click', () => {
+        state.rawText = SAMPLE_MEMO.text;
+        state.tableRows = SAMPLE_MEMO.tableRows;
+        els.rawMemoText.value = SAMPLE_MEMO.text;
+        els.dropzoneTitle.textContent = SAMPLE_MEMO.fileName;
+        els.dropzoneSub.textContent = 'Contoh memo siap disusun — klik Susun surat';
+        els.btnReset.classList.remove('hidden');
+        els.fileHelperNote.classList.add('hidden');
+        showToast('Contoh Memo BNI dimuat. Klik "Susun surat" untuk melihat hasilnya.');
+      });
+
+      els.btnCompose.addEventListener('click', composeLetter);
+      els.btnDownloadWord.addEventListener('click', downloadWord);
+      els.btnDownloadPdf.addEventListener('click', downloadPdf);
+      els.btnPrint.addEventListener('click', () => {
+        setStep(3);
+        window.print();
+      });
+
+      
+      // Session Login & Registration Controller (preserves saved Gemini API key automatically)
+      const loginEls = {
+        screen: document.getElementById('login-screen'),
+        appShell: document.getElementById('app-shell'),
+        tabLogin: document.getElementById('tab-auth-login'),
+        tabRegister: document.getElementById('tab-auth-register'),
+        form: document.getElementById('login-form'),
+        user: document.getElementById('login-user'),
+        pass: document.getElementById('login-pass'),
+        error: document.getElementById('login-error'),
+        regForm: document.getElementById('register-form'),
+        regName: document.getElementById('reg-name'),
+        regEmail: document.getElementById('reg-email'),
+        regPass: document.getElementById('reg-pass'),
+        regPass2: document.getElementById('reg-pass2'),
+        regError: document.getElementById('register-error'),
+        userLabel: document.getElementById('session-user-label'),
+        logoutBtn: document.getElementById('btn-logout')
+      };
+
+      const DEMO_ACCOUNTS = {
+        'admin@nsd.bni.co.id': { name: 'Admin NSD', pass: 'nsd2026' },
+        'nsd': { name: 'Admin NSD', pass: 'nsd2026' }
+      };
+
+      function loadUsers() {
+        try {
+          const raw = localStorage.getItem('surat_nsd_users_v1');
+          return raw ? JSON.parse(raw) : {};
+        } catch (e) {
+          return {};
+        }
+      }
+
+      function saveUsers(users) {
+        try { localStorage.setItem('surat_nsd_users_v1', JSON.stringify(users)); } catch (e) {}
+      }
+
+      function getSavedSession() {
+        try { return sessionStorage.getItem('surat_nsd_session_user') || ''; } catch (e) { return ''; }
+      }
+      function setSavedSession(u) {
+        try {
+          if (u) sessionStorage.setItem('surat_nsd_session_user', u);
+          else sessionStorage.removeItem('surat_nsd_session_user');
+        } catch (e) {}
+      }
+
+      function switchAuthTab(mode) {
+        const isReg = mode === 'register';
+        loginEls.form.classList.toggle('hidden', isReg);
+        loginEls.regForm.classList.toggle('hidden', !isReg);
+        loginEls.error.classList.add('hidden');
+        loginEls.regError.classList.add('hidden');
+        if (isReg) {
+          loginEls.tabRegister.className = 'py-1.5 rounded-md text-xs font-semibold bg-white text-[#0e252c] shadow-sm transition-colors';
+          loginEls.tabLogin.className = 'py-1.5 rounded-md text-xs font-medium text-[#526872] hover:text-[#0e252c] transition-colors';
+        } else {
+          loginEls.tabLogin.className = 'py-1.5 rounded-md text-xs font-semibold bg-white text-[#0e252c] shadow-sm transition-colors';
+          loginEls.tabRegister.className = 'py-1.5 rounded-md text-xs font-medium text-[#526872] hover:text-[#0e252c] transition-colors';
+        }
+      }
+
+      loginEls.tabLogin.addEventListener('click', () => switchAuthTab('login'));
+      loginEls.tabRegister.addEventListener('click', () => switchAuthTab('register'));
+
+      function applySessionUI(username) {
+        if (username) {
+          loginEls.screen.classList.add('hidden');
+          loginEls.appShell.classList.remove('hidden');
+          loginEls.userLabel.textContent = username;
+          if (!state.modelId) state.modelId = 'gemini-4-hydrogen';
+        } else {
+          loginEls.appShell.classList.add('hidden');
+          loginEls.screen.classList.remove('hidden');
+          loginEls.userLabel.textContent = '';
+        }
+      }
+
+      loginEls.form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const u = loginEls.user.value.trim().toLowerCase();
+        const p = loginEls.pass.value;
+        const registered = loadUsers();
+        const acc = registered[u] || DEMO_ACCOUNTS[u];
+        if (acc && acc.pass === p) {
+          loginEls.error.classList.add('hidden');
+          const label = acc.name ? `${acc.name} (${u})` : u;
+          setSavedSession(label);
+          applySessionUI(label);
+          showToast('Berhasil masuk ke Surat NSD.');
+        } else {
+          loginEls.error.textContent = 'Email atau kata sandi salah. Belum punya akun? Silakan daftar di tab Daftar Akun.';
+          loginEls.error.classList.remove('hidden');
+        }
+      });
+
+      loginEls.regForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = loginEls.regName.value.trim();
+        const email = loginEls.regEmail.value.trim().toLowerCase();
+        const p1 = loginEls.regPass.value;
+        const p2 = loginEls.regPass2.value;
+
+        if (p1.length < 6) {
+          loginEls.regError.textContent = 'Kata sandi minimal 6 karakter.';
+          loginEls.regError.classList.remove('hidden');
+          return;
+        }
+        if (p1 !== p2) {
+          loginEls.regError.textContent = 'Konfirmasi kata sandi tidak cocok.';
+          loginEls.regError.classList.remove('hidden');
+          return;
+        }
+        const registered = loadUsers();
+        if (registered[email] || DEMO_ACCOUNTS[email]) {
+          loginEls.regError.textContent = 'Email sudah terdaftar. Silakan masuk di tab Masuk.';
+          loginEls.regError.classList.remove('hidden');
+          return;
+        }
+        registered[email] = { name, pass: p1, createdAt: new Date().toISOString() };
+        saveUsers(registered);
+        loginEls.regError.classList.add('hidden');
+        loginEls.regForm.reset();
+        const label = `${name} (${email})`;
+        setSavedSession(label);
+        applySessionUI(label);
+        showToast(`Selamat datang, ${name}! Akun berhasil didaftarkan.`);
+      });
+
+      loginEls.logoutBtn.addEventListener('click', () => {
+        setSavedSession('');
+        loginEls.pass.value = '';
+        applySessionUI('');
+        showToast('Sesi berakhir. Kamu telah keluar.');
+      });
+
+      applySessionUI(getSavedSession());
+
+      els.btnReset.addEventListener('click', () => {
+        state.rawText = '';
+        state.tableRows = null;
+        state.imageBase64 = null;
+        state.imageMime = null;
+        els.rawMemoText.value = '';
+        els.fileInput.value = '';
+        els.dropzoneTitle.textContent = 'Pilih atau seret file memo';
+        els.dropzoneSub.textContent = 'Word, PDF, gambar, atau teks';
+        els.btnReset.classList.add('hidden');
+        els.kbbiBadge.classList.add('hidden');
+        els.fileHelperNote.classList.add('hidden');
+        els.generatedLetterWrap.classList.add('hidden');
+        els.emptyPreviewState.classList.remove('hidden');
+        setStep(1);
+      });
+    })();
+  </script>
+</body>
+</html>
